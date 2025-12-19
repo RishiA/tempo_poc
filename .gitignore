@@ -16,3 +16,11 @@ npm-debug.log*
 .vscode/
 .idea/
 
+# Personal notes and working documents (keep local, don't push)
+learning.md
+plan.md
+VERCEL_DEPLOYMENT.md
+Tempo testnet - use cases.md
+TEMPO_DOCS_INDEX.md
+
+
