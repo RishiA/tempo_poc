@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createPublicClient, formatUnits, http, parseAbiItem } from 'viem'
+import { createPublicClient, formatUnits, http, parseAbiItem, type AbiEvent } from 'viem'
 import { TOKEN_METADATA, TEMPO_TESTNET } from '@/lib/constants'
 
 type Direction = 'sent' | 'received'
@@ -44,7 +44,7 @@ async function findBlockAtOrAfterTimestamp(args: {
 async function getLogsChunked(args: {
   client: ReturnType<typeof createPublicClient>
   address: `0x${string}`
-  event: ReturnType<typeof parseAbiItem>
+  event: AbiEvent
   filterArgs: { from?: `0x${string}`; to?: `0x${string}` }
   fromBlock: bigint
   toBlock: bigint
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
 
     const transferEvent = parseAbiItem(
       'event Transfer(address indexed from, address indexed to, uint256 value)'
-    )
+    ) as AbiEvent
 
     const tokenEntries = Object.entries(TOKEN_METADATA) as Array<
       [`0x${string}`, { symbol: string; decimals: number; address: `0x${string}` }]

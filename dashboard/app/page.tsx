@@ -15,6 +15,7 @@ export default function Home() {
   const { isConnected, isReconnecting } = useAccount();
   const router = useRouter();
   const [browserSupported] = useState(() => isPasskeySupported());
+  const [isClient, setIsClient] = useState(false);
 
   const connector = connectors[0]; // WebAuthn connector
 
@@ -39,6 +40,8 @@ export default function Home() {
 
   // Handle client-side rendering and check browser compatibility
   useEffect(() => {
+    setIsClient(true);
+    
     // Only side effects here (no synchronous setState calls)
     if (!browserSupported) {
       toast.error('Passkeys not supported', {
@@ -76,10 +79,6 @@ export default function Home() {
       await connect({
         connector,
         chainId: 42429, // Tempo testnet
-        capabilities: {
-          type: 'sign-up',
-          label: 'Tempo Wallet', // Label for the passkey
-        },
       });
       // Success toast will be handled by ConnectionHandler
     } catch (err) {
@@ -116,9 +115,6 @@ export default function Home() {
       await connect({
         connector,
         chainId: 42429,
-        capabilities: {
-          type: 'sign-in',
-        },
       });
       // Success toast will be handled by ConnectionHandler
     } catch (err) {

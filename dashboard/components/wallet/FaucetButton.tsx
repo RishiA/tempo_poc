@@ -30,11 +30,12 @@ export function FaucetButton() {
         duration: 5000,
       })
 
-      const txHash = data?.receipt?.transactionHash as `0x${string}` | undefined
-      if (txHash) {
+      // Try to extract transaction hash if available
+      const txHash = (data as any)?.receipt?.transactionHash || (data as any)?.hash
+      if (txHash && typeof txHash === 'string') {
         recordActivity({
           kind: 'faucet_fund',
-          hash: txHash,
+          hash: txHash as `0x${string}`,
           createdAt: Date.now(),
           chainId: TEMPO_TESTNET.id,
           title: 'Faucet funding',

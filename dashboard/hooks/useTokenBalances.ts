@@ -57,9 +57,14 @@ export function useTokenBalances() {
     const symbolResult = data?.[symbolIndex];
     const decimalsResult = data?.[decimalsIndex];
 
-    const balance = balanceResult?.status === 'success' ? balanceResult.result as bigint : 0n;
-    const symbol = symbolResult?.status === 'success' ? symbolResult.result as string : name;
-    const decimals = decimalsResult?.status === 'success' ? Number(decimalsResult.result) : 18;
+    let balance: bigint = 0n;
+    if (balanceResult?.status === 'success') {
+      const result = balanceResult.result;
+      balance = typeof result === 'bigint' ? result : BigInt((result as any) || 0);
+    }
+    
+    const symbol = symbolResult?.status === 'success' ? (symbolResult.result as string) : name;
+    const decimals = decimalsResult?.status === 'success' ? Number(decimalsResult.result as any) : 18;
 
     const formatted = formatUnits(balance, decimals);
 
