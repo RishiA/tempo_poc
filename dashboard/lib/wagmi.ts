@@ -26,8 +26,10 @@ const rpId = getRpId()
 // - platformConnector: nudges WebAuthn toward platform authenticators (Touch ID)
 // - defaultConnector: allows cross-device (QR) / security key fallback
 //
-// Note: tempo.ts/wagmi's webAuthn options surface may evolve; keep config tolerant.
-const platformConnector = webAuthn({
+// Note: wagmi accepts connector *factories* (functions). Function properties like `name`
+// are read-only in JS, so do NOT try to assign to them. Instead, wrap the factory and
+// override the returned connector metadata.
+const platformConnectorFactory = webAuthn({
   keyManager,
   ...(rpId ? { rpId } : {}),
   // Some versions of tempo.ts accept additional WebAuthn options under `options`.
@@ -39,22 +41,28 @@ const platformConnector = webAuthn({
   },
 } as any)
 
-const defaultConnector = webAuthn({
+const defaultConnectorFactory = webAuthn({
   keyManager,
   ...(rpId ? { rpId } : {}),
 } as any)
 
-// Ensure unique ids/names so Wagmi can differentiate between connectors.
-;(platformConnector as any).id = (platformConnector as any).id || 'webauthn-platform'
-;(platformConnector as any).name = (platformConnector as any).name || 'Passkey (This device)'
-;(defaultConnector as any).id = (defaultConnector as any).id || 'webauthn-default'
-;(defaultConnector as any).name = (defaultConnector as any).name || 'Passkey (Phone / Security key)'
+const platformConnector = ((config: any) => ({
+  ...(platformConnectorFactory as any)(config),
+  id: 'webauthn-platform',
+  name: 'Passkey (This device)',
+})) as any
+
+const defaultConnector = ((config: any) => ({
+  ...(defaultConnectorFactory as any)(config),
+  id: 'webauthn-default',
+  name: 'Passkey (Phone / Security key)',
+})) as any
 
 export const wagmiConfig = createConfig({
   chains: [TEMPO_TESTNET],
   connectors: [
-    platformConnector as any,
-    defaultConnector as any,
+    platformConnector,
+    defaultConnector,
   ],
   transports: {
     [TEMPO_TESTNET.id]: http(TEMPO_TESTNET.rpcUrls.default.http[0]),
