@@ -112,10 +112,13 @@ export default function Home() {
     }
     
     try {
+      // tempo.ts/webAuthn uses `capabilities.type = 'sign-up'` to force credential creation.
+      // wagmi's Connect types don't include this extension, so we pass it via a cast.
       await connect({
         connector: platformConnector,
         chainId: 42429, // Tempo testnet
-      });
+        capabilities: { type: 'sign-up', label: 'Tempo Wallet' },
+      } as any);
       // Success toast will be handled by ConnectionHandler
     } catch (err) {
       // Error is logged by Wagmi, we just need to show user-friendly message
@@ -155,7 +158,8 @@ export default function Home() {
       await connect({
         connector: platformConnector,
         chainId: 42429,
-      });
+        capabilities: { type: 'sign-in', selectAccount: true },
+      } as any);
       // Success toast will be handled by ConnectionHandler
     } catch (err) {
       // Error is logged by Wagmi, we just need to show user-friendly message
@@ -307,7 +311,11 @@ export default function Home() {
                 onClick={async () => {
                   if (!defaultConnector) return;
                   try {
-                    await connect({ connector: defaultConnector, chainId: 42429 });
+                    await connect({
+                      connector: defaultConnector,
+                      chainId: 42429,
+                      capabilities: { type: 'sign-in', selectAccount: true },
+                    } as any);
                   } catch (err) {
                     const error = parseWalletError(err);
                     toast.error(error.title, { description: error.description, duration: 5000 });
