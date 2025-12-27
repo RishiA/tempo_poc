@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useTokenBalances } from '@/hooks/useTokenBalances'
+import { useRecipients } from '@/hooks/useRecipients'
+import { isValidAddress } from '@/types/recipient'
 import { EXPLORER_URL } from '@/lib/constants'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -19,12 +21,16 @@ import { TEMPO_TESTNET } from '@/lib/constants'
 export default function SendPaymentPage() {
   const { address } = useAccount()
   const { balances, refetch: refetchBalances } = useTokenBalances()
+  const { recipients, addRecipient, updateLastUsed, getRecipientByAddress } = useRecipients()
   
   const [recipient, setRecipient] = useState('')
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string>('')
   const [amount, setAmount] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
   const [feeToken, setFeeToken] = useState('')
   const [memo, setMemo] = useState('')
+  const [saveRecipient, setSaveRecipient] = useState(false)
+  const [newRecipientName, setNewRecipientName] = useState('')
   const [didRetryWithoutMemo, setDidRetryWithoutMemo] = useState(false)
   const [successData, setSuccessData] = useState<{
     txHash: string
@@ -175,10 +181,25 @@ export default function SendPaymentPage() {
       // Refresh balances
       refetchBalances()
       
+      // Handle recipient management
+      if (saveRecipient && newRecipientName.trim() && isValidAddress(recipient)) {
+        try {
+          addRecipient(newRecipientName.trim(), recipient)
+          setSaveRecipient(false)
+          setNewRecipientName('')
+        } catch (error) {
+          // Silently fail if recipient already exists
+          console.log('Could not save recipient:', error)
+        }
+      } else if (isValidAddress(recipient)) {
+        // Update last used for existing recipient
+        updateLastUsed(recipient)
+      }
+      
       // Reset mutation state
       sendPayment.reset()
     }
-  }, [sendPayment.isSuccess, sendPayment.data, refetchBalances, sendPayment, amount, selectedTokenData, recipient, memo])
+  }, [sendPayment.isSuccess, sendPayment.data, refetchBalances, sendPayment, amount, selectedTokenData, recipient, memo, saveRecipient, newRecipientName, addRecipient, updateLastUsed])
 
   // Handle errors
   useEffect(() => {
@@ -381,6 +402,42 @@ export default function SendPaymentPage() {
                   </div>
                 )}
 
+                {/* Saved Recipients Selector */}
+                {recipients.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="saved-recipient">Saved Recipients (Optional)</Label>
+                    <Select
+                      value={selectedRecipientId}
+                      onValueChange={(value) => {
+                        setSelectedRecipientId(value)
+                        const selected = recipients.find(r => r.id === value)
+                        if (selected) {
+                          setRecipient(selected.address)
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="saved-recipient">
+                        <SelectValue placeholder="Select a saved recipient" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {recipients.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{r.name}</span>
+                              <span className="text-xs text-muted-foreground font-mono">
+                                ({r.address.slice(0, 6)}...{r.address.slice(-4)})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Or enter address manually below
+                    </p>
+                  </div>
+                )}
+
                 {/* Recipient Address */}
                 <div className="space-y-2">
                   <Label htmlFor="recipient">Recipient Address</Label>
@@ -389,9 +446,35 @@ export default function SendPaymentPage() {
                     type="text"
                     placeholder="0x..."
                     value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
+                    onChange={(e) => {
+                      setRecipient(e.target.value)
+                      setSelectedRecipientId('') // Clear saved recipient selection
+                    }}
                     className="font-mono text-sm"
                   />
+                  {recipient && isValidAddress(recipient) && !getRecipientByAddress(recipient) && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="save-recipient"
+                        checked={saveRecipient}
+                        onChange={(e) => setSaveRecipient(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="save-recipient" className="text-sm font-normal cursor-pointer">
+                        Save this recipient as:
+                      </Label>
+                      {saveRecipient && (
+                        <Input
+                          placeholder="Name..."
+                          value={newRecipientName}
+                          onChange={(e) => setNewRecipientName(e.target.value)}
+                          className="h-8 text-sm flex-1"
+                          maxLength={50}
+                        />
+                      )}
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Enter the wallet address to send tokens to
                   </p>

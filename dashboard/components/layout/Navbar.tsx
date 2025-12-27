@@ -19,6 +19,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Send', href: '/dashboard/send' },
   { name: 'Receive', href: '/dashboard/receive' },
+  { name: 'Recipients', href: '/dashboard/recipients' },
   { name: 'Transactions', href: '/dashboard/transactions' },
 ]
 
