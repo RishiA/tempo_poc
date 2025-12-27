@@ -16,8 +16,10 @@ export default function Home() {
   const router = useRouter();
   const [browserSupported] = useState(() => isPasskeySupported());
   const [isClient, setIsClient] = useState(false);
+  const [platformAvailable, setPlatformAvailable] = useState<boolean | null>(null);
 
-  const connector = connectors[0]; // WebAuthn connector
+  const platformConnector = connectors.find((c) => c.id === 'webauthn-platform') ?? connectors[0];
+  const defaultConnector = connectors.find((c) => c.id === 'webauthn-default') ?? connectors[0];
 
   // Redirect to dashboard if connected
   useEffect(() => {
@@ -57,11 +59,40 @@ export default function Home() {
         duration: 10000,
       });
     }
+
+    // Check if the platform authenticator (Touch ID / Windows Hello) is available.
+    // If not, Chrome will usually offer cross-device (QR) or security key only.
+    (async () => {
+      try {
+        if (!window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
+          setPlatformAvailable(false);
+          return;
+        }
+        const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        setPlatformAvailable(Boolean(available));
+      } catch {
+        setPlatformAvailable(false);
+      }
+    })();
   }, [browserSupported]);
+
+  const showPlatformHelp = () => {
+    const isChrome =
+      typeof navigator !== 'undefined' && /Chrome\//.test(navigator.userAgent) && !/Edg\//.test(navigator.userAgent);
+
+    // High-signal guidance: if platform authenticator isn't available in Chrome, you'll get QR prompt.
+    const description = platformAvailable === false
+      ? (isChrome
+          ? 'Chrome isn’t seeing a local passkey provider, so it falls back to the QR-code flow. Enable iCloud Keychain passkeys (macOS Settings → Apple ID → iCloud → Passwords & Keychain) or try Safari.'
+          : 'Your browser/device is not exposing a platform passkey provider, so it will fall back to phone QR or a security key.')
+      : 'If you still see a QR code, your browser is choosing cross-device. On macOS Chrome, ensure iCloud Keychain passkeys are enabled; Safari typically uses Touch ID automatically.';
+
+    toast.info('Passkey help', { description, duration: 12000 });
+  };
 
   // Handle sign up
   const handleSignUp = async () => {
-    if (!connector) {
+    if (!platformConnector) {
       toast.error('No connector available', {
         description: 'Wallet connector not initialized. Please refresh the page.',
       });
@@ -74,10 +105,15 @@ export default function Home() {
       });
       return;
     }
+
+    // If platform authenticator isn't available, warn the user they'll likely see QR.
+    if (platformAvailable === false) {
+      showPlatformHelp();
+    }
     
     try {
       await connect({
-        connector,
+        connector: platformConnector,
         chainId: 42429, // Tempo testnet
       });
       // Success toast will be handled by ConnectionHandler
@@ -97,7 +133,7 @@ export default function Home() {
 
   // Handle sign in
   const handleSignIn = async () => {
-    if (!connector) {
+    if (!platformConnector) {
       toast.error('No connector available', {
         description: 'Wallet connector not initialized. Please refresh the page.',
       });
@@ -110,10 +146,14 @@ export default function Home() {
       });
       return;
     }
+
+    if (platformAvailable === false) {
+      showPlatformHelp();
+    }
     
     try {
       await connect({
-        connector,
+        connector: platformConnector,
         chainId: 42429,
       });
       // Success toast will be handled by ConnectionHandler
@@ -254,9 +294,28 @@ export default function Home() {
                         d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" 
                       />
                     </svg>
-                    Sign up with Passkey
+                    Sign up with Passkey (Touch ID)
                   </>
                 )}
+              </Button>
+
+              {/* Fallback: QR / Security Key */}
+              <Button
+                variant="secondary"
+                className="w-full h-12 text-base"
+                size="lg"
+                onClick={async () => {
+                  if (!defaultConnector) return;
+                  try {
+                    await connect({ connector: defaultConnector, chainId: 42429 });
+                  } catch (err) {
+                    const error = parseWalletError(err);
+                    toast.error(error.title, { description: error.description, duration: 5000 });
+                  }
+                }}
+                disabled={isPending || isReconnecting || !isClient || !browserSupported}
+              >
+                Use phone QR / security key
               </Button>
 
               {/* Divider */}
@@ -302,10 +361,27 @@ export default function Home() {
                         d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" 
                       />
                     </svg>
-                    Sign in with existing Passkey
+                    Sign in with Passkey (Touch ID)
                   </>
                 )}
               </Button>
+
+              <div className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>
+                    This device passkeys:
+                    {' '}
+                    {platformAvailable === null ? 'Checking…' : (platformAvailable ? 'Available' : 'Not available')}
+                  </span>
+                  <button
+                    type="button"
+                    className="underline hover:text-foreground transition-colors"
+                    onClick={showPlatformHelp}
+                  >
+                    Help
+                  </button>
+                </div>
+              </div>
 
               {/* Info Section */}
               <div className="pt-4 space-y-4 text-sm text-muted-foreground border-t">
