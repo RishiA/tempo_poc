@@ -9,34 +9,12 @@ import { toast } from 'sonner'
 import { isValidAddress } from '@/types/recipient'
 import { parseWalletError } from '@/lib/errors'
 
-// #region agent log
-function logDebugClient(location: string, message: string, data: object, hypothesisId: string) {
-  fetch('http://127.0.0.1:7242/ingest/84418c44-ee5b-4cfc-9e78-f04e29fce6f0', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ location, message, data, timestamp: Date.now(), sessionId: 'debug-session', hypothesisId }),
-  }).catch(() => {})
-}
-// #endregion
-
 export default function PayClient({ to }: { to: string }) {
   const router = useRouter()
   const { isConnected, isConnecting } = useAccount()
   const { connect, connectors, isPending, error: connectError } = useConnect()
 
-  // #region agent log
-  useEffect(() => {
-    logDebugClient('PayClient:mount', 'PayClient mounted', { toProp: to, typeofTo: typeof to }, 'E')
-  }, [])
-  // #endregion
-
-  const validTo = useMemo(() => {
-    const isValid = to && isValidAddress(to)
-    // #region agent log
-    logDebugClient('PayClient:validTo', 'isValidAddress check', { to, isValid, toLength: to?.length }, 'D')
-    // #endregion
-    return isValid ? (to as `0x${string}`) : null
-  }, [to])
+  const validTo = useMemo(() => (to && isValidAddress(to) ? (to as `0x${string}`) : null), [to])
 
   const platformConnector = connectors.find((c) => c.id === 'webauthn-platform') ?? connectors[0]
   const defaultConnector = connectors.find((c) => c.id === 'webauthn-default') ?? connectors[0]
