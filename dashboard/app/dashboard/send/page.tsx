@@ -17,11 +17,13 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { recordActivity } from '@/lib/activityLog'
 import { TEMPO_TESTNET } from '@/lib/constants'
+import { useSearchParams } from 'next/navigation'
 
 export default function SendPaymentPage() {
   const { address } = useAccount()
   const { balances, refetch: refetchBalances } = useTokenBalances()
   const { recipients, addRecipient, updateLastUsed, getRecipientByAddress } = useRecipients()
+  const searchParams = useSearchParams()
   
   const [recipient, setRecipient] = useState('')
   const [selectedRecipientId, setSelectedRecipientId] = useState<string>('')
@@ -45,6 +47,19 @@ export default function SendPaymentPage() {
 
   const selectedTokenData = balances.find(t => t.address === selectedToken)
   const feeTokenData = balances.find(t => t.address === feeToken)
+
+  // Prefill recipient from payment links like /dashboard/send?to=0x...
+  useEffect(() => {
+    const to = searchParams.get('to')
+    if (!to) return
+    if (!isValidAddress(to)) return
+
+    // Don't override if the user already selected a saved recipient.
+    if (selectedRecipientId) return
+
+    // Only set if empty or already matches (idempotent).
+    setRecipient((current) => (current ? current : to))
+  }, [searchParams, selectedRecipientId])
 
   // Default fee token to "same as send token" unless the user has explicitly chosen otherwise.
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { QRCodeSVG } from 'qrcode.react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +15,17 @@ export default function ReceivePage() {
   const { balances, isPolling } = useBalancePolling(10000, true)
   const { data: txData } = useTransactions(1) // Last 1 day for recent transactions
   const [showFullAddress, setShowFullAddress] = useState(false)
+
+  const paymentLink = useMemo(() => {
+    if (!address) return ''
+    try {
+      const url = new URL('/pay', window.location.origin)
+      url.searchParams.set('to', address)
+      return url.toString()
+    } catch {
+      return ''
+    }
+  }, [address])
 
   const handleCopy = async () => {
     if (!address) return
@@ -75,7 +86,7 @@ export default function ReceivePage() {
             {/* QR Code */}
             <div className="flex justify-center p-6 bg-white rounded-lg">
               <QRCodeSVG
-                value={address}
+                value={paymentLink || address}
                 size={256}
                 level="M"
                 includeMargin={true}
