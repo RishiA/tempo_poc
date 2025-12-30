@@ -8,7 +8,7 @@ export default function PayPage({
 }: {
   searchParams: { to?: string }
 }) {
-  // Server component: read search params here to avoid requiring Suspense for useSearchParams().
+  // Back-compat for older QR links: /pay?to=0x...
   return <PayClient to={searchParams?.to ?? ''} />
 }
 

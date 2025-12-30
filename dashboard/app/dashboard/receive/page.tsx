@@ -19,8 +19,7 @@ export default function ReceivePage() {
   const paymentLink = useMemo(() => {
     if (!address) return ''
     try {
-      const url = new URL('/pay', window.location.origin)
-      url.searchParams.set('to', address)
+      const url = new URL(`/pay/${address}`, window.location.origin)
       return url.toString()
     } catch {
       return ''
