@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document>
+  <CstmrCdtTrfInitn>
+    <GrpHdr>
+      <MsgId>PAYROLL-TEST-001</MsgId>
+      <CreDtTm>2025-03-30T10:00:00Z</CreDtTm>
+      <NbOfTxs>10</NbOfTxs>
+      <CtrlSum>6125.00</CtrlSum>
+    </GrpHdr>
+
+    <PmtInf>
+      <PmtInfId>PAYROLL-MARCH-2025</PmtInfId>
+      <PmtMtd>TRF</PmtMtd>
+      <NbOfTxs>10</NbOfTxs>
+      <CtrlSum>6125.00</CtrlSum>
+
+      <!-- Payment 1 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-001</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">750.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x593d2b13f517c910DECD1b0EDeA37052669f6B41</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 2 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-002</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">520.50</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0xAc8Ff9a0cCA7953fbd825793787A2e087C11fC58</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 3 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-003</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">980.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x59e4Edd420652e92908D828d990Dc9aF5b2fe43c</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 4 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-004</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">410.75</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x0aEF1fC9070E7AB8Ae4333254b9aFBcdF78aB5eB</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 5 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-005</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">120.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0xEd1B8e744fFf33144fc9C7Eb76D5269054fDEd67</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 6 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-006</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">865.25</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x9325657D92C603ECDe1b2eFA7774C2ceed9cd544</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 7 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-007</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">300.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x5Bfed63fAAE7ef30262aa64c2EDB46ad474Ed269</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 8 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-008</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">995.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x173408bF5c249d0CbFB59F93EF42671c617D905B</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 9 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-009</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">640.00</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0xdDD2D8ae5061Be9e68FE29Ac71487AE88B40B00E</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+      <!-- Payment 10 -->
+      <CdtTrfTxInf>
+        <PmtId>
+          <EndToEndId>EMP-010</EndToEndId>
+        </PmtId>
+        <Amt>
+          <InstdAmt Ccy="USD">544.50</InstdAmt>
+        </Amt>
+        <CdtrAcct>
+          <Id>
+            <Othr>
+              <Id>0x8782402e267C60f4b9073F57B8624D34A71751A4</Id>
+            </Othr>
+          </Id>
+        </CdtrAcct>
+      </CdtTrfTxInf>
+
+    </PmtInf>
+  </CstmrCdtTrfInitn>
+</Document>
+

@@ -1,28 +1,4 @@
-// Tempo Testnet Configuration
-export const TEMPO_TESTNET = {
-  id: Number(process.env.NEXT_PUBLIC_TEMPO_CHAIN_ID) || 42429,
-  name: 'Tempo Testnet',
-  nativeCurrency: {
-    name: 'TEMPO',
-    symbol: 'TEMPO',
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: [process.env.NEXT_PUBLIC_TEMPO_RPC_URL || 'https://rpc.testnet.tempo.xyz'],
-    },
-    public: {
-      http: [process.env.NEXT_PUBLIC_TEMPO_RPC_URL || 'https://rpc.testnet.tempo.xyz'],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: 'Tempo Explorer',
-      url: process.env.NEXT_PUBLIC_TEMPO_EXPLORER_URL || 'https://explore.tempo.xyz',
-    },
-  },
-  testnet: true,
-} as const
+import { tempoTestnet } from 'tempo.ts/chains'
 
 // Token Addresses (Tempo Testnet Stablecoins)
 export const TOKENS = {
@@ -31,6 +7,15 @@ export const TOKENS = {
   BetaUSD: process.env.NEXT_PUBLIC_BETA_USD || '0x20c0000000000000000000000000000000000002',
   ThetaUSD: process.env.NEXT_PUBLIC_THETA_USD || '0x20c0000000000000000000000000000000000003',
 } as const
+
+// Tempo Testnet Configuration
+//
+// Important: we use Tempo's chain definition (via `tempo.ts`) so Tempo-specific
+// transaction types (e.g. `0x76` for multi-call) + fee token inference work.
+// This enables `wallet_sendCalls` for one-approval payroll batches.
+export const TEMPO_TESTNET = (tempoTestnet as any)({
+  feeToken: TOKENS.AlphaUSD as `0x${string}`,
+})
 
 // Alias for easier import
 export const TEMPO_TOKENS = TOKENS
