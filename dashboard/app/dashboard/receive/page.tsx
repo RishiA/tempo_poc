@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
+import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
