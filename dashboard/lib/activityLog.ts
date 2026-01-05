@@ -2,6 +2,7 @@ export type ActivityKind =
   | 'send_payment'
   | 'faucet_fund'
   | 'set_fee_token'
+  | 'payroll_execution'
 
 export type ActivityLogEntry = {
   kind: ActivityKind

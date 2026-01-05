@@ -120,7 +120,7 @@ export async function executePayrollBatch(
           id: payment.id,
           status: 'COMPLETED',
           employee: {
-            name: payment.employee.name,
+            name: payment.employee.name ?? payment.id,
             address: payment.employee.address,
           },
           amount: payment.amount,
@@ -138,7 +138,7 @@ export async function executePayrollBatch(
           id: payment.id,
           status: 'FAILED',
           employee: {
-            name: payment.employee.name,
+            name: payment.employee.name ?? payment.id,
             address: payment.employee.address,
           },
           amount: payment.amount,
