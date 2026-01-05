@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { ConnectionHandler } from '@/components/wallet/ConnectionHandler'
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 
 export default function DashboardLayout({
   children,
@@ -42,9 +43,10 @@ export default function DashboardLayout({
     <div className="min-h-screen flex flex-col">
       <ConnectionHandler />
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 pb-24 sm:pb-0">
         {children}
       </main>
+      <MobileBottomNav />
     </div>
   )
 }

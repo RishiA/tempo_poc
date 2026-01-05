@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { parseUnits, stringToHex, pad } from 'viem'
 import { Hooks } from 'tempo.ts/wagmi'
@@ -17,12 +17,20 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { recordActivity } from '@/lib/activityLog'
 import { TEMPO_TESTNET } from '@/lib/constants'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 export default function SendPaymentPage() {
   const { address } = useAccount()
   const { balances, refetch: refetchBalances } = useTokenBalances()
   const { recipients, addRecipient, updateLastUsed, getRecipientByAddress } = useRecipients()
+  const router = useRouter()
   const searchParams = useSearchParams()
   
   const [recipient, setRecipient] = useState('')
@@ -34,6 +42,8 @@ export default function SendPaymentPage() {
   const [saveRecipient, setSaveRecipient] = useState(false)
   const [newRecipientName, setNewRecipientName] = useState('')
   const [didRetryWithoutMemo, setDidRetryWithoutMemo] = useState(false)
+  const [isScanOpen, setIsScanOpen] = useState(false)
+  const [scanError, setScanError] = useState<string>('')
   const [successData, setSuccessData] = useState<{
     txHash: string
     amount: string
@@ -41,6 +51,10 @@ export default function SendPaymentPage() {
     recipient: string
     memo?: string
   } | null>(null)
+
+  const scanVideoRef = useRef<HTMLVideoElement | null>(null)
+  const scanStreamRef = useRef<MediaStream | null>(null)
+  const scanRafRef = useRef<number | null>(null)
 
   // Use Tempo.ts hook for WebAuthn-compatible transfers
   const sendPayment = Hooks.token.useTransferSync()
@@ -68,6 +82,142 @@ export default function SendPaymentPage() {
       setFeeToken(selectedToken)
     }
   }, [selectedToken]) // intentionally not depending on feeToken to avoid loops
+
+  const stopScan = () => {
+    if (scanRafRef.current != null) {
+      cancelAnimationFrame(scanRafRef.current)
+      scanRafRef.current = null
+    }
+    if (scanStreamRef.current) {
+      for (const track of scanStreamRef.current.getTracks()) track.stop()
+      scanStreamRef.current = null
+    }
+    if (scanVideoRef.current) {
+      scanVideoRef.current.srcObject = null
+    }
+  }
+
+  const parseAddressFromQR = (raw: string): string | null => {
+    const trimmed = raw.trim()
+    const match = trimmed.match(/0x[a-fA-F0-9]{40}/)
+    if (match) return match[0]
+
+    // Support relative links like /pay/0x...
+    if (trimmed.startsWith('/pay/')) {
+      const candidate = trimmed.split('/').filter(Boolean)[1]
+      return candidate && isValidAddress(candidate) ? candidate : null
+    }
+
+    // Support full URLs like https://.../pay/0x...
+    try {
+      const url = new URL(trimmed)
+      const parts = url.pathname.split('/').filter(Boolean)
+      const payIdx = parts.indexOf('pay')
+      const candidate = payIdx >= 0 ? parts[payIdx + 1] : null
+      return candidate && isValidAddress(candidate) ? candidate : null
+    } catch {
+      return null
+    }
+  }
+
+  const fillRecipient = (addr: string) => {
+    setSelectedRecipientId('')
+    setRecipient(addr)
+    router.push(`/dashboard/send?to=${addr}`)
+  }
+
+  const handlePasteRecipient = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      const parsed = parseAddressFromQR(text)
+      if (!parsed) {
+        toast.error('Could not find an address', {
+          description: 'Paste a 0x… address or a /pay/<address> link.',
+        })
+        return
+      }
+      fillRecipient(parsed)
+      toast.success('Recipient filled', {
+        description: 'Address pasted from clipboard',
+      })
+    } catch (err) {
+      toast.error('Paste failed', {
+        description: 'Clipboard permission denied. Paste manually into the field.',
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (!isScanOpen) {
+      stopScan()
+      setScanError('')
+      return
+    }
+
+    let cancelled = false
+    const start = async () => {
+      setScanError('')
+      const BarcodeDetectorCtor = (window as any).BarcodeDetector as
+        | (new (opts: { formats: string[] }) => { detect: (src: CanvasImageSource) => Promise<Array<{ rawValue: string }>> })
+        | undefined
+
+      if (!BarcodeDetectorCtor) {
+        setScanError('QR scanning is not supported in this browser. Use Paste or enter the address manually.')
+        return
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+        })
+        if (cancelled) {
+          for (const t of stream.getTracks()) t.stop()
+          return
+        }
+        scanStreamRef.current = stream
+
+        const video = scanVideoRef.current
+        if (!video) {
+          for (const t of stream.getTracks()) t.stop()
+          return
+        }
+
+        video.srcObject = stream
+        await video.play()
+
+        const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] })
+
+        const tick = async () => {
+          if (cancelled) return
+          try {
+            const results = await detector.detect(video)
+            const rawValue = results?.[0]?.rawValue
+            if (rawValue) {
+              const parsed = parseAddressFromQR(rawValue)
+              if (parsed) {
+                fillRecipient(parsed)
+                setIsScanOpen(false)
+                return
+              }
+            }
+          } catch {
+            // ignore per-frame detection errors
+          }
+          scanRafRef.current = requestAnimationFrame(tick)
+        }
+
+        scanRafRef.current = requestAnimationFrame(tick)
+      } catch (e) {
+        setScanError('Camera access was denied or unavailable. Use Paste or enter the address manually.')
+      }
+    }
+
+    start()
+    return () => {
+      cancelled = true
+      stopScan()
+    }
+  }, [isScanOpen])
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
@@ -264,10 +414,26 @@ export default function SendPaymentPage() {
     <div className="container max-w-7xl py-8 px-4 sm:px-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Send Payment</h1>
-        <p className="text-muted-foreground mt-2">
-          Transfer stablecoins to another wallet
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Send Payment</h1>
+            <p className="text-muted-foreground mt-2">
+              Transfer stablecoins to another wallet
+            </p>
+          </div>
+          {/* Mobile $ tab switcher */}
+          <div className="sm:hidden inline-flex rounded-lg border bg-muted/30 p-1 h-fit">
+            <span className="px-3 py-1.5 text-sm rounded-md bg-background shadow-sm">
+              Send
+            </span>
+            <Link
+              href="/dashboard/receive"
+              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:text-foreground transition"
+            >
+              Receive
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -455,7 +621,27 @@ export default function SendPaymentPage() {
 
                 {/* Recipient Address */}
                 <div className="space-y-2">
-                  <Label htmlFor="recipient">Recipient Address</Label>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="recipient">Recipient Address</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePasteRecipient}
+                      >
+                        Paste
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsScanOpen(true)}
+                      >
+                        Scan QR
+                      </Button>
+                    </div>
+                  </div>
                   <Input
                     id="recipient"
                     type="text"
@@ -494,6 +680,36 @@ export default function SendPaymentPage() {
                     Enter the wallet address to send tokens to
                   </p>
                 </div>
+
+                <Dialog open={isScanOpen} onOpenChange={setIsScanOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Scan QR code</DialogTitle>
+                      <DialogDescription>
+                        Scan a recipient’s QR code to fill the wallet address.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {scanError ? (
+                      <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                        {scanError}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <video
+                          ref={scanVideoRef}
+                          className="w-full aspect-square rounded-lg bg-black object-cover"
+                          muted
+                          playsInline
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Tip: you can scan QR codes that contain a raw <span className="font-mono">0x…</span> address
+                          or a <span className="font-mono">/pay/&lt;address&gt;</span> link.
+                        </p>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
 
                 {/* Amount */}
                 <div className="space-y-2">

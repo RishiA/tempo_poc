@@ -39,7 +39,7 @@ export function Navbar() {
         </Link>
 
         {/* Navigation Links */}
-        <nav className="flex items-center gap-1 flex-1">
+        <nav className="hidden sm:flex items-center gap-1 flex-1">
           {navigation.map((item) => (
             <Link
               key={item.href}

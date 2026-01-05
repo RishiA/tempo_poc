@@ -66,11 +66,25 @@ export default function ReceivePage() {
     <div className="container py-8 px-4 sm:px-8">
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Receive Payment</h1>
-          <p className="text-muted-foreground mt-2">
-            Share your wallet address to receive stablecoins
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Receive Payment</h1>
+            <p className="text-muted-foreground mt-2">
+              Share your wallet address to receive stablecoins
+            </p>
+          </div>
+          {/* Mobile $ tab switcher */}
+          <div className="sm:hidden inline-flex rounded-lg border bg-muted/30 p-1 h-fit">
+            <Link
+              href="/dashboard/send"
+              className="px-3 py-1.5 text-sm rounded-md text-muted-foreground hover:text-foreground transition"
+            >
+              Send
+            </Link>
+            <span className="px-3 py-1.5 text-sm rounded-md bg-background shadow-sm">
+              Receive
+            </span>
+          </div>
         </div>
 
         {/* QR Code and Address */}
